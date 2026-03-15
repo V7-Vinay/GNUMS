@@ -1,21 +1,23 @@
 const supabase = require("../config/supabaseClient")
 
-// mark attendance
-const markAttendance = async (req, res) => {
+// Create assignment
+const createAssignment = async (req, res) => {
 
-  const { studentId, courseId, status } = req.body
+  const teacherId = req.user.id
+  const { title, description, courseId, dueDate, maxMarks } = req.body
 
   const { data, error } = await supabase
-    .from("attendance")
+    .from("assignments")
     .insert([
       {
-        student_id: studentId,
+        title,
+        description,
         course_id: courseId,
-        date: new Date(),
-        status
+        teacher_id: teacherId,
+        due_date: dueDate,
+        max_marks: maxMarks
       }
     ])
-    .select()
 
   if (error) {
     return res.status(500).json(error)
@@ -25,18 +27,15 @@ const markAttendance = async (req, res) => {
 }
 
 
-// get teacher attendance records
-const getTeacherAttendance = async (req, res) => {
+// Get assignments created by this teacher
+const getTeacherAssignments = async (req, res) => {
 
   const teacherId = req.user.id
 
   const { data, error } = await supabase
-    .from("attendance")
-    .select(`
-      *,
-      courses!inner(teacher_id)
-    `)
-    .eq("courses.teacher_id", teacherId)
+    .from("assignments")
+    .select("*")
+    .eq("teacher_id", teacherId)
 
   if (error) {
     return res.status(500).json(error)
@@ -46,6 +45,6 @@ const getTeacherAttendance = async (req, res) => {
 }
 
 module.exports = {
-  markAttendance,
-  getTeacherAttendance
+  createAssignment,
+  getTeacherAssignments
 }

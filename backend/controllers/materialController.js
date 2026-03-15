@@ -1,4 +1,4 @@
-const supabase = require("../config/supabaseClient")
+  const supabase = require("../config/supabaseClient")
 
 // upload study material
 const uploadMaterial = async (req, res) => {
