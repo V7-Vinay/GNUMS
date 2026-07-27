@@ -2,8 +2,9 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 import { Login } from './pages/auth/Login';
-import { Signup } from './pages/auth/Signup';
 import { ForgotPassword } from './pages/auth/ForgotPassword';
+import { RegisterRequest } from './pages/auth/RegisterRequest';
+import { ResetPassword } from './pages/auth/ResetPassword';
 
 import { StudentDashboard } from './pages/student/Dashboard';
 import { StudentAttendance } from './pages/student/Attendance';
@@ -11,6 +12,8 @@ import { StudentMarks } from './pages/student/Marks';
 import { StudyMaterials } from './pages/student/StudyMaterials';
 import { StudentAssignments } from './pages/student/Assignments';
 import { StudentNotifications } from './pages/student/Notifications';
+import { EnrolledCourses } from './pages/student/EnrolledCourses';  
+import { StudentProfile } from './pages/student/Studentprofile';
 
 import { TeacherDashboard } from './pages/teacher/Dashboard';
 import { TeacherUploadNotes } from './pages/teacher/UploadNotes';
@@ -26,7 +29,8 @@ import { AdminSystemAnalytics } from './pages/admin/SystemAnalytics';
 import { AdminSettings } from './pages/admin/Settings';
 
 const ProtectedRoute = ({ children, allowedRole }: { children: React.ReactNode; allowedRole: string }) => {
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
+  const isAuthenticated = !!user;
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -40,7 +44,8 @@ const ProtectedRoute = ({ children, allowedRole }: { children: React.ReactNode; 
 };
 
 const AppRoutes = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { user } = useAuth();
+  const isAuthenticated = !!user;
 
   return (
     <Routes>
@@ -55,14 +60,25 @@ const AppRoutes = () => {
         }
       />
       <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
+      <Route path="/signup" element={<Login />} />
+      <Route path="/register-request" element={<RegisterRequest />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+
 
       <Route
         path="/student/dashboard"
         element={
           <ProtectedRoute allowedRole="student">
             <StudentDashboard />
+          </ProtectedRoute>
+        }
+      />
+       <Route
+        path="/student/enrolled-courses"
+        element={
+          <ProtectedRoute allowedRole="student">
+            <EnrolledCourses />
           </ProtectedRoute>
         }
       />
@@ -103,6 +119,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRole="student">
             <StudentNotifications />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/profile"
+        element={
+          <ProtectedRoute allowedRole="student">
+            <StudentProfile />
           </ProtectedRoute>
         }
       />

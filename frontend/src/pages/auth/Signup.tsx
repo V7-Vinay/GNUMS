@@ -1,302 +1,316 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { GraduationCap, Mail, Lock, User, AlertCircle, ShieldCheck } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import {
+  GraduationCap,
+  Mail,
+  Lock,
+  User,
+  AlertCircle,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import { supabase } from "../../lib/supabaseClient";
- 
+
 export const Signup = () => {
   const navigate = useNavigate();
-  const { signup } = useAuth();
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    role: 'student' as 'student' | 'teacher',
-  });
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+
   const [step, setStep] = useState<"email" | "otp" | "password">("email");
+
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    role: "student" as "student" | "parent",
+    password: "",
+    confirmPassword: "",
+  });
+
   const [otp, setOtp] = useState("");
- 
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
- 
+
+    /* ---------------- STEP 1 : SEND OTP ---------------- */
+
     if (step === "email") {
-      setIsLoading(true);
+      setLoading(true);
+
       const { error } = await supabase.auth.signInWithOtp({
-        email: formData.email
+        email: formData.email,
       });
-      setIsLoading(false);
+
+      setLoading(false);
+
       if (error) {
         setError(error.message);
       } else {
         setStep("otp");
       }
     }
- 
+
+    /* ---------------- STEP 2 : VERIFY OTP ---------------- */
+
     else if (step === "otp") {
-      setIsLoading(true);
-      const { error } = await supabase.auth.verifyOtp({
+      setLoading(true);
+
+      const { data, error } = await supabase.auth.verifyOtp({
         email: formData.email,
         token: otp,
-        type: "email"
+        type: "email",
       });
-      setIsLoading(false);
-      if (error) {
-        setError("Invalid OTP. Please try again.");
+
+      setLoading(false);
+
+      if (error || !data.user) {
+        setError("Invalid OTP");
       } else {
         setStep("password");
       }
     }
- 
+
+    /* ---------------- STEP 3 : CREATE ACCOUNT ---------------- */
+
     else if (step === "password") {
       if (formData.password !== formData.confirmPassword) {
         setError("Passwords do not match");
         return;
       }
+
       if (formData.password.length < 6) {
         setError("Password must be at least 6 characters");
         return;
       }
-      const success = signup(
-        formData.name,
-        formData.email,
-        formData.password,
-        formData.role
-      );
-      if (success) {
-        navigate(`/${formData.role}/dashboard`);
-      } else {
-        setError("Signup failed");
+
+      setLoading(true);
+
+      const { error: passwordError } = await supabase.auth.updateUser({
+        password: formData.password,
+      });
+
+      if (passwordError) {
+        setError(passwordError.message);
+        setLoading(false);
+        return;
       }
+
+      const { data: userData } = await supabase.auth.getUser();
+
+      const { error: dbError } = await supabase.from("users").insert({
+        id: userData.user?.id,
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
+      });
+
+      setLoading(false);
+
+      if (dbError) {
+        setError(dbError.message);
+        return;
+      }
+
+      navigate(`/${formData.role}/dashboard`);
     }
   };
- 
-  const stepLabels = ["Your Info", "Verify Email", "Set Password"];
-  const currentStepIndex = step === "email" ? 0 : step === "otp" ? 1 : 2;
- 
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
-        {/* Header */}
+
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full mb-4">
-            <GraduationCap className="w-8 h-8 text-white" />
+          <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <GraduationCap className="text-white w-8 h-8" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h1>
-          <p className="text-gray-600">Join our learning platform today</p>
+
+          <h1 className="text-3xl font-bold text-gray-900">Create Account</h1>
+          <p className="text-gray-600">Join our platform</p>
         </div>
- 
-        {/* Step Indicator */}
-        <div className="flex items-center justify-center mb-6 space-x-2">
-          {stepLabels.map((label, i) => (
-            <div key={i} className="flex items-center">
-              <div className="flex flex-col items-center">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
-                    i < currentStepIndex
-                      ? 'bg-blue-600 text-white'
-                      : i === currentStepIndex
-                      ? 'bg-blue-600 text-white ring-4 ring-blue-100'
-                      : 'bg-gray-200 text-gray-500'
-                  }`}
-                >
-                  {i < currentStepIndex ? '✓' : i + 1}
-                </div>
-                <span className={`text-xs mt-1 ${i === currentStepIndex ? 'text-blue-600 font-medium' : 'text-gray-400'}`}>
-                  {label}
-                </span>
-              </div>
-              {i < stepLabels.length - 1 && (
-                <div className={`w-12 h-0.5 mx-1 mb-4 ${i < currentStepIndex ? 'bg-blue-600' : 'bg-gray-200'}`} />
-              )}
-            </div>
-          ))}
-        </div>
- 
-        <div className="bg-white rounded-xl shadow-lg p-8">
+
+        <div className="bg-white p-8 rounded-xl shadow-lg">
+
           <form onSubmit={handleSubmit} className="space-y-6">
+
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
-                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="bg-red-50 border border-red-200 p-4 rounded-lg flex space-x-3">
+                <AlertCircle className="text-red-600 w-5 h-5 mt-0.5" />
                 <p className="text-sm text-red-800">{error}</p>
               </div>
             )}
- 
-            {/* ── STEP 1: Email + Name + Role ── */}
+
+            {/* STEP 1 */}
+
             {step === "email" && (
               <>
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="text-sm font-medium text-gray-700">
                     Full Name
                   </label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+
+                  <div className="relative mt-1">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+
                     <input
-                      id="name"
                       type="text"
+                      required
                       value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      onChange={(e) =>
+                        setFormData({ ...formData, name: e.target.value })
+                      }
+                      className="w-full pl-10 py-3 border rounded-lg"
                       placeholder="John Doe"
-                      required
                     />
                   </div>
                 </div>
- 
+
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address
+                  <label className="text-sm font-medium text-gray-700">
+                    Email
                   </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+
+                  <div className="relative mt-1">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+
                     <input
-                      id="email"
                       type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="you@example.com"
                       required
+                      value={formData.email}
+                      onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
+                      className="w-full pl-10 py-3 border rounded-lg"
+                      placeholder="you@example.com"
                     />
                   </div>
                 </div>
- 
-                <div>
-                  <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
-                    I am a
-                  </label>
-                  <select
-                    id="role"
-                    value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value as 'student' | 'teacher' })}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="student">Student</option>
-                    <option value="teacher">Teacher</option>
-                  </select>
-                </div>
- 
+
                 <button
                   type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={loading}
+                  className="w-full bg-blue-600 text-white py-3 rounded-lg"
                 >
-                  {isLoading ? 'Sending OTP...' : 'Send OTP'}
+                  {loading ? "Sending OTP..." : "Send OTP"}
                 </button>
               </>
             )}
- 
-            {/* ── STEP 2: OTP Verification ── */}
+
+            {/* STEP 2 */}
+
             {step === "otp" && (
               <>
-                <div className="text-center">
-                  <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-50 rounded-full mb-3">
-                    <ShieldCheck className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    We sent a verification code to <span className="font-semibold text-gray-800">{formData.email}</span>
-                  </p>
-                </div>
- 
                 <div>
-                  <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="text-sm font-medium text-gray-700">
                     Enter OTP
                   </label>
+
                   <input
-                    id="otp"
                     type="text"
+                    required
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-xl tracking-widest font-mono"
-                    placeholder="······"
-                    maxLength={6}
-                    required
+                    className="w-full mt-1 py-3 px-3 border rounded-lg text-center tracking-widest"
+                    placeholder="123456"
                   />
                 </div>
- 
+
                 <button
                   type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={loading}
+                  className="w-full bg-blue-600 text-white py-3 rounded-lg"
                 >
-                  {isLoading ? 'Verifying...' : 'Verify OTP'}
-                </button>
- 
-                <button
-                  type="button"
-                  onClick={() => { setStep("email"); setError(""); setOtp(""); }}
-                  className="w-full text-sm text-gray-500 hover:text-blue-600 transition-colors"
-                >
-                  ← Back / Change email
+                  {loading ? "Verifying..." : "Verify OTP"}
                 </button>
               </>
             )}
- 
-            {/* ── STEP 3: Set Password ── */}
+
+            {/* STEP 3 */}
+
             {step === "password" && (
               <>
-                <div className="text-center">
-                  <p className="text-sm text-gray-600">
-                    Email verified! Now set a password for your account.
-                  </p>
-                </div>
- 
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="text-sm font-medium text-gray-700">
                     Password
                   </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+
+                  <div className="relative mt-1">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+
                     <input
-                      id="password"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Create a password"
+                      onChange={(e) =>
+                        setFormData({ ...formData, password: e.target.value })
+                      }
+                      className="w-full pl-10 pr-10 py-3 border rounded-lg"
+                      autoComplete="new-password"
                       required
                     />
+
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
                   </div>
                 </div>
- 
+
                 <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="text-sm font-medium text-gray-700">
                     Confirm Password
                   </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+
+                  <div className="relative mt-1">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+
                     <input
-                      id="confirmPassword"
-                      type="password"
-                      value={formData.confirmPassword}
-                      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Confirm your password"
+                      type={showConfirm ? "text" : "password"}
                       required
+                      value={formData.confirmPassword}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          confirmPassword: e.target.value,
+                        })
+                      }
+                      className="w-full pl-10 pr-10 py-3 border rounded-lg"
                     />
+
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirm(!showConfirm)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2"
+                    >
+                      {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
                   </div>
                 </div>
- 
+
                 <button
                   type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={loading}
+                  className="w-full bg-blue-600 text-white py-3 rounded-lg"
                 >
-                  {isLoading ? 'Creating account...' : 'Create Account'}
+                  {loading ? "Creating account..." : "Create Account"}
                 </button>
               </>
             )}
+
           </form>
- 
-          <p className="mt-6 text-center text-sm text-gray-600">
-            Already have an account?{' '}
-            <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">
+
+          <p className="text-center text-sm mt-6 text-gray-600">
+            Already have an account?{" "}
+            <Link to="/login" className="text-blue-600 font-medium">
               Sign in
             </Link>
           </p>
+
         </div>
       </div>
     </div>

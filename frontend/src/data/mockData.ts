@@ -7,9 +7,14 @@ export interface User {
   avatar?: string;
   enrolledCourses?: string[];
   teachingCourses?: string[];
+  branch?: string;
+  semester?: number;
+  section?: string;
+  rollNo?: string;
 }
 
 export interface Course {
+  status: string;
   id: string;
   name: string;
   code: string;
@@ -18,6 +23,7 @@ export interface Course {
   studentIds: string[];
   startDate: string;
   endDate: string;
+  semester?: number;  // ← NEW: which semester this course belongs to
 }
 
 export interface Attendance {
@@ -27,7 +33,6 @@ export interface Attendance {
   date: string;
   status: 'present' | 'absent' | 'late';
 }
-
 export interface Mark {
   id: string;
   studentId: string;
@@ -37,7 +42,6 @@ export interface Mark {
   totalMarks: number;
   date: string;
 }
-
 export interface Assignment {
   id: string;
   courseId: string;
@@ -48,7 +52,6 @@ export interface Assignment {
   teacherId: string;
   submissions?: AssignmentSubmission[];
 }
-
 export interface AssignmentSubmission {
   id: string;
   assignmentId: string;
@@ -58,7 +61,6 @@ export interface AssignmentSubmission {
   feedback?: string;
   fileUrl: string;
 }
-
 export interface StudyMaterial {
   id: string;
   courseId: string;
@@ -69,7 +71,6 @@ export interface StudyMaterial {
   fileUrl: string;
   teacherId: string;
 }
-
 export interface Notification {
   id: string;
   userId: string;
@@ -111,6 +112,10 @@ export const users: User[] = [
     password: 'student123',
     role: 'student',
     enrolledCourses: ['1', '2', '3'],
+    branch: 'Computer Science',
+    semester: 6,
+    section: 'CS - 6 - D',
+    rollNo: '1DS23CS256',
   },
   {
     id: '5',
@@ -119,6 +124,10 @@ export const users: User[] = [
     password: 'student123',
     role: 'student',
     enrolledCourses: ['1', '2'],
+    branch: 'Computer Science',
+    semester: 4,
+    section: 'CS - 4 - B',
+    rollNo: '1DS23CS104',
   },
   {
     id: '6',
@@ -127,6 +136,10 @@ export const users: User[] = [
     password: 'student123',
     role: 'student',
     enrolledCourses: ['2', '3'],
+    branch: 'Information Science',
+    semester: 6,
+    section: 'IS - 6 - A',
+    rollNo: '1DS23IS089',
   },
 ];
 
@@ -140,6 +153,7 @@ export const courses: Course[] = [
     studentIds: ['4', '5'],
     startDate: '2024-01-15',
     endDate: '2024-05-30',
+    semester: 6,   // ← semester this course runs in
   },
   {
     id: '2',
@@ -150,6 +164,7 @@ export const courses: Course[] = [
     studentIds: ['4', '5', '6'],
     startDate: '2024-01-15',
     endDate: '2024-05-30',
+    semester: 4,
   },
   {
     id: '3',
@@ -160,19 +175,20 @@ export const courses: Course[] = [
     studentIds: ['4', '6'],
     startDate: '2024-01-15',
     endDate: '2024-05-30',
+    semester: 6,
   },
 ];
 
 export const attendance: Attendance[] = [
-  { id: '1', studentId: '4', courseId: '1', date: '2024-03-01', status: 'present' },
-  { id: '2', studentId: '4', courseId: '1', date: '2024-03-02', status: 'present' },
-  { id: '3', studentId: '4', courseId: '1', date: '2024-03-03', status: 'absent' },
-  { id: '4', studentId: '4', courseId: '1', date: '2024-03-04', status: 'present' },
-  { id: '5', studentId: '4', courseId: '1', date: '2024-03-05', status: 'late' },
-  { id: '6', studentId: '4', courseId: '2', date: '2024-03-01', status: 'present' },
-  { id: '7', studentId: '4', courseId: '2', date: '2024-03-02', status: 'present' },
-  { id: '8', studentId: '4', courseId: '2', date: '2024-03-03', status: 'present' },
-  { id: '9', studentId: '4', courseId: '3', date: '2024-03-01', status: 'present' },
+  { id: '1',  studentId: '4', courseId: '1', date: '2024-03-01', status: 'present' },
+  { id: '2',  studentId: '4', courseId: '1', date: '2024-03-02', status: 'present' },
+  { id: '3',  studentId: '4', courseId: '1', date: '2024-03-03', status: 'absent' },
+  { id: '4',  studentId: '4', courseId: '1', date: '2024-03-04', status: 'present' },
+  { id: '5',  studentId: '4', courseId: '1', date: '2024-03-05', status: 'late' },
+  { id: '6',  studentId: '4', courseId: '2', date: '2024-03-01', status: 'present' },
+  { id: '7',  studentId: '4', courseId: '2', date: '2024-03-02', status: 'present' },
+  { id: '8',  studentId: '4', courseId: '2', date: '2024-03-03', status: 'present' },
+  { id: '9',  studentId: '4', courseId: '3', date: '2024-03-01', status: 'present' },
   { id: '10', studentId: '4', courseId: '3', date: '2024-03-02', status: 'absent' },
   { id: '11', studentId: '5', courseId: '1', date: '2024-03-01', status: 'present' },
   { id: '12', studentId: '5', courseId: '1', date: '2024-03-02', status: 'present' },
@@ -183,9 +199,9 @@ export const attendance: Attendance[] = [
 
 export const marks: Mark[] = [
   { id: '1', studentId: '4', courseId: '1', examType: 'Midterm', marks: 85, totalMarks: 100, date: '2024-02-15' },
-  { id: '2', studentId: '4', courseId: '1', examType: 'Quiz 1', marks: 18, totalMarks: 20, date: '2024-01-20' },
+  { id: '2', studentId: '4', courseId: '1', examType: 'Quiz 1',  marks: 18, totalMarks: 20,  date: '2024-01-20' },
   { id: '3', studentId: '4', courseId: '2', examType: 'Midterm', marks: 78, totalMarks: 100, date: '2024-02-15' },
-  { id: '4', studentId: '4', courseId: '2', examType: 'Quiz 1', marks: 16, totalMarks: 20, date: '2024-01-20' },
+  { id: '4', studentId: '4', courseId: '2', examType: 'Quiz 1',  marks: 16, totalMarks: 20,  date: '2024-01-20' },
   { id: '5', studentId: '4', courseId: '3', examType: 'Midterm', marks: 92, totalMarks: 100, date: '2024-02-15' },
   { id: '6', studentId: '5', courseId: '1', examType: 'Midterm', marks: 75, totalMarks: 100, date: '2024-02-15' },
   { id: '7', studentId: '5', courseId: '2', examType: 'Midterm', marks: 82, totalMarks: 100, date: '2024-02-15' },

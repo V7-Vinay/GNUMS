@@ -2,13 +2,12 @@ const supabase = require("../../config/supabaseClient")
 
 const getStudentCourses = async (req, res) => {
   try {
-
     const studentId = req.user.id
 
     const { data, error } = await supabase
-      .from("enrollments")
+      .from("class_enrollments")
       .select(`
-        courses (
+        classes (
           id,
           code,
           name,
@@ -18,13 +17,13 @@ const getStudentCourses = async (req, res) => {
       .eq("student_id", studentId)
 
     if (error) {
-      return res.status(500).json(error)
+      return res.status(500).json({ message: error.message })
     }
 
-    const courses = data.map(e => e.courses)
+    // Extract the embedded classes data
+    const classes = data.map(e => e.classes).filter(Boolean)
 
-    res.json(courses)
-
+    res.json(classes)
   } catch (err) {
     res.status(500).json({ error: err.message })
   }

@@ -1,11 +1,11 @@
 const express = require("express")
 const { addMarks, getTeacherMarks } = require("../controllers/marksController")
-const { verifyToken } = require("../middleware/authMiddleware")
+const { protect, authorize } = require("../middleware/authMiddleware")
 
 const router = express.Router()
 
-router.post("/add", verifyToken, addMarks)
+router.post("/add", protect, authorize("teacher"), addMarks)
 
-router.get("/teacher", verifyToken, getTeacherMarks)
+router.get("/teacher", protect, authorize("teacher"), getTeacherMarks)
 
 module.exports = router

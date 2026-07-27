@@ -1,9 +1,7 @@
 const supabase = require("../../config/supabaseClient")
 
 const getStudentAttendance = async (req, res) => {
-
   try {
-
     const studentId = req.user.id
 
     const { data, error } = await supabase
@@ -12,7 +10,7 @@ const getStudentAttendance = async (req, res) => {
         id,
         date,
         status,
-        courses (
+        classes (
           id,
           code,
           name
@@ -22,17 +20,13 @@ const getStudentAttendance = async (req, res) => {
       .order("date", { ascending: false })
 
     if (error) {
-      return res.status(500).json(error)
+      return res.status(500).json({ message: error.message })
     }
 
     res.json(data)
-
   } catch (err) {
-
     res.status(500).json({ error: err.message })
-
   }
-
 }
 
 module.exports = {

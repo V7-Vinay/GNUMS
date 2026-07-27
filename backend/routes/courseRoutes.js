@@ -1,9 +1,9 @@
 const express = require("express")
 const { getTeacherCourses } = require("../controllers/courseController")
-const { verifyToken } = require("../middleware/authMiddleware")
+const { protect, authorize } = require("../middleware/authMiddleware")
 
 const router = express.Router()
 
-router.get("/teacher", verifyToken, getTeacherCourses)
+router.get("/teacher", protect, authorize("teacher"), getTeacherCourses)
 
 module.exports = router

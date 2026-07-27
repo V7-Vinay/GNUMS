@@ -1,4 +1,4 @@
-import { Video as LucideIcon } from 'lucide-react';
+import type{ LucideIcon } from "lucide-react";
 
 interface DashboardCardProps {
   title: string;
@@ -7,6 +7,7 @@ interface DashboardCardProps {
   iconColor: string;
   bgColor: string;
   description?: string;
+  className?: string;
 }
 
 export const DashboardCard = ({

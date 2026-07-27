@@ -4,7 +4,7 @@ import {
   BookOpen,
   Calendar,
   GraduationCap,
-  FileText,
+  
   ClipboardList,
   Bell,
   Upload,
@@ -12,6 +12,7 @@ import {
   Users,
   Settings,
   X,
+  
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -26,6 +27,7 @@ export const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
   const studentLinks = [
     { to: '/student/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/student/enrolled-courses', icon: BookOpen, label: 'Courses' },
     { to: '/student/attendance', icon: Calendar, label: 'Attendance' },
     { to: '/student/marks', icon: GraduationCap, label: 'Marks' },
     { to: '/student/materials', icon: BookOpen, label: 'Study Materials' },

@@ -1,2 +1,3 @@
 recharts
 @supabase/supabase-js
+axios

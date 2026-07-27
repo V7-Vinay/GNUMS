@@ -1,6 +1,6 @@
 const express = require("express")
 const { createAssignment, getTeacherAssignments } = require("../controllers/assignmentController")
-const { verifyToken } = require("../middleware/authMiddleware")
+const { protect, authorize } = require("../middleware/authMiddleware")
 const {
   getAssignmentSubmissions,
   gradeSubmission
@@ -8,19 +8,21 @@ const {
 const router = express.Router()
 
 // create assignment
-router.post("/create", verifyToken, createAssignment)
+router.post("/create", protect, authorize("teacher"), createAssignment)
 
 // get teacher assignments
-router.get("/teacher", verifyToken, getTeacherAssignments)
+router.get("/teacher", protect, authorize("teacher"), getTeacherAssignments)
 router.get(
   "/:assignmentId/submissions",
-  verifyToken,
+  protect,
+  authorize("teacher"),
   getAssignmentSubmissions
 )
 
 router.put(
   "/submissions/:submissionId/grade",
-  verifyToken,
+  protect,
+  authorize("teacher"),
   gradeSubmission
 )
 module.exports = router

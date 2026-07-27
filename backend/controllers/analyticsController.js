@@ -1,73 +1,58 @@
 const supabase = require("../config/supabaseClient")
 
 const getTeacherAnalytics = async (req, res) => {
-
   try {
-
     const teacherId = req.user.id
 
-    // get teacher courses
-    const { data: courses } = await supabase
-      .from("courses")
-      .select("id, code, name")
+    // 1. Fetch class-level dashboard summaries
+    const { data: classes, error: classErr } = await supabase
+      .from("view_class_analytics_summary")
+      .select("*")
       .eq("teacher_id", teacherId)
 
-    const courseIds = courses.map(c => c.id)
+    if (classErr) {
+      return res.status(500).json({ message: classErr.message })
+    }
 
-    // attendance
-    const { data: attendance } = await supabase
-      .from("attendance")
+    const classIds = classes.map(c => c.class_id)
+
+    // If teacher has no classes, return empty datasets
+    if (classIds.length === 0) {
+      return res.json({
+        classes: [],
+        assignments: [],
+        studentAttendance: []
+      })
+    }
+
+    // 2. Fetch assignment-level submission rates and averages
+    const { data: assignments, error: asgErr } = await supabase
+      .from("view_assignment_submission_analytics")
       .select("*")
-      .in("course_id", courseIds)
+      .in("class_id", classIds)
 
-    // marks
-    const { data: marks } = await supabase
-      .from("marks")
+    if (asgErr) {
+      return res.status(500).json({ message: asgErr.message })
+    }
+
+    // 3. Fetch student-level attendance summaries
+    const { data: studentAttendance, error: attErr } = await supabase
+      .from("view_student_attendance_analytics")
       .select("*")
-      .in("course_id", courseIds)
+      .in("class_id", classIds)
 
-    // calculate attendance %
-    const attendanceStats = courses.map(course => {
-
-      const records = attendance.filter(a => a.course_id === course.id)
-
-      const present = records.filter(r => r.status === "present").length
-      const total = records.length
-
-      return {
-        course: course.code,
-        attendance: total ? Math.round((present / total) * 100) : 0
-      }
-
-    })
-
-    // performance
-    const performanceStats = courses.map(course => {
-
-      const courseMarks = marks.filter(m => m.course_id === course.id)
-
-      const avg = courseMarks.length
-        ? courseMarks.reduce((sum, m) => sum + (m.marks / m.total_marks) * 100, 0) / courseMarks.length
-        : 0
-
-      return {
-        course: course.code,
-        average: Math.round(avg)
-      }
-
-    })
+    if (attErr) {
+      return res.status(500).json({ message: attErr.message })
+    }
 
     res.json({
-      attendance: attendanceStats,
-      performance: performanceStats
+      classes,
+      assignments,
+      studentAttendance
     })
-
   } catch (err) {
-
     res.status(500).json({ error: err.message })
-
   }
-
 }
 
 module.exports = { getTeacherAnalytics }
