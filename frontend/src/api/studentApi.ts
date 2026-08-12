@@ -42,10 +42,12 @@ export const submitAssignment = async (formData: FormData) => {
 
 // Fetch study materials
 export const getStudentMaterials = async () => {
-  return []
-}
+  const { data } = await API.get("/student/materials");
+  return data;
+};
 
 // Fetch student notifications
 export const getStudentNotifications = async () => {
-  return []
-}
+  const { data } = await API.get("/student/notifications");
+  return data;
+};

@@ -1,28 +1,31 @@
-const express = require("express")
-const { createAssignment, getTeacherAssignments } = require("../controllers/assignmentController")
-const { protect, authorize } = require("../middleware/authMiddleware")
+const express = require("express");
+const { createAssignment, getTeacherAssignments } = require("../controllers/assignmentController");
+const { protect, authorize } = require("../middleware/authMiddleware");
 const {
   getAssignmentSubmissions,
-  gradeSubmission
-} = require("../controllers/submissionController")
-const router = express.Router()
+  getTeacherSubmissions,
+  gradeSubmission,
+} = require("../controllers/submissionController");
 
-// create assignment
-router.post("/create", protect, authorize("teacher"), createAssignment)
+const router = express.Router();
 
-// get teacher assignments
-router.get("/teacher", protect, authorize("teacher"), getTeacherAssignments)
-router.get(
-  "/:assignmentId/submissions",
-  protect,
-  authorize("teacher"),
-  getAssignmentSubmissions
-)
+// Apply teacher checks
+router.use(protect);
+router.use(authorize("teacher", "admin"));
 
-router.put(
-  "/submissions/:submissionId/grade",
-  protect,
-  authorize("teacher"),
-  gradeSubmission
-)
-module.exports = router
+// Create assignment
+router.post("/create", createAssignment);
+
+// Get assignments
+router.get("/teacher", getTeacherAssignments);
+
+// Get submissions across all courses
+router.get("/submissions/teacher", getTeacherSubmissions);
+
+// Get submissions for a specific assignment
+router.get("/:assignmentId/submissions", getAssignmentSubmissions);
+
+// Grade a specific submission
+router.put("/submissions/:submissionId/grade", gradeSubmission);
+
+module.exports = router;
